@@ -4,7 +4,7 @@
 <!DOCTYPE rfc SYSTEM "rfc2629.dtd">
 
 <rfc category="std" ipr="trust200902"
-     docName="draft-ivov-mmusic-multiple-sources-00.xml">
+     docName="draft-ivov-mmusic-multiple-sources-00">
 
 <?rfc toc='yes' ?>
 <?rfc symrefs='yes' ?>
@@ -36,22 +36,29 @@
 
     <abstract>
       <t>
-        Thе SDP Offer/Answer model describes a mechanism that allows two
-        entities to negotiate a multimedia session. The SDP syntax of
-        the Offer/Answer model uses constructs known as media (m=) lines
-        to describe each medium. Historically implementations have most
-        often used such "m=" lines as an envelope for one RTP session
-        carrying a maximum of two RTP streams (SSRCs) at a time: one in
-        each direction. However, RTP in general imposes no such
-        limitation and allows for any number of media streams (SSRCs) to
-        be exchanged in a single RTP session.
+        The Session Description Protocol (SDP) Offer/Answer model
+        describes a mechanism that allows two entities to negotiate a
+        multimedia session. The SDP syntax of the Offer/Answer model
+        uses constructs known as media (m=) lines to describe each
+        medium. In SDP itself these "m=" lines were designed to describe
+        RTP sessions with any number of streams (SSRCs). Yet,
+        Offer/Answer implementations in SIP applications have most often
+        used them as an envelope for a maximum of two RTP streams
+        (SSRCs) at a time: one in each direction. The most common reason
+        for this has been the fact these applications could not
+        meaningfully render multiple SSRCs simultaneously.
+      </t>
+      <t>
+        The above situation has led to difficulties once the need to
+        represent multiple (SSRCs) in an interoperable manner became
+        more common.
       </t>
       <t>
         This document explores the use of "m=" lines for the negotiation
-        of sessions with multiple media sources. It presents the
-        advantages of such an approach as well as the challenges that it
-        implies in terms of interoperability with already deployed
-        legacy devices.
+        of sessions with multiple media sources, as per their original
+        design in SDP. It presents the advantages of such an approach as
+        well as the challenges that it implies in terms of
+        interoperability with already deployed legacy devices.
       </t>
       <t>
         The model described here was first presented in the RTCWEB No
@@ -62,19 +69,18 @@
     </abstract>
   </front>
   <middle>
-    <section title='Background' anchor="background">
+    <section title='Introduction' anchor="intro">
       <t>
-        Since its early days the Offer/Answer (O/A) model
-        <xref target="RFC3264"/> has mainly been used for the
-        negotiation of Real-time Transport Protocol
-        <xref target="RFC3550"/> sessions between endpoints that only
-        use a single media source per medium. Examples of such sources
-        include microphones, cameras, desktop streamers etc. The list
-        can be extended to cases where multiple sources are often mixed
+        Since its early days the Session Description Protocol (SDP)
+        Offer/Answer (O/A) model <xref target="RFC3264"/> has mainly
+        been used for the negotiation of Real-time Transport Protocol
+        (RTP) <xref target="RFC3550"/> sessions between endpoints that
+        only use a single media source per medium. Examples of such
+        sources include microphones, cameras, desktop streamers etc. The
+        list can be extended to cases where multiple sources are mixed
         at the media level by an audio or video mixer and then appear as
         a single stream, i.e. RTP Synchronisation Source (SSRC) on the
-        RTP and Session Description Protocol (SDP)
-        <xref target="RFC4566"/> levels.
+        RTP and SDP <xref target="RFC4566"/> levels.
       </t>
       <t>
         In such sessions each medium and its corresponding device are
@@ -84,9 +90,15 @@
         by the specifications and most implementations.
       </t>
       <t>
-        Unfortunately, <xref target="RFC3264"/> is relatively vague when
-        it comes to scenarios involving endpoints with multiple media
-        sources.
+        Unfortunately, the situation becomes relatively confusing when
+        it comes to transporting multiple media sources (SSRCs) per
+        medium. Streaming any number of RTP streams is an inherent
+        part of the protocol and describing such multi-stream RTP
+        sessions is directly supported by SDP. Still, the Offer/Answer
+        model <xref target="RFC3264"/> is relatively vague on the
+        subject and relying on the multi-stream capabilities of an SDP
+        "m=" line is likely to lead to unexpected results with most
+        endpoints.
       </t>
       <t>
         At the time of writing of this document, the MMUSIC working
@@ -104,37 +116,17 @@
       </t>
       <t>
         The goal of this document is to propose an alternative approach
-        that views "m=" lines as descriptors of RTP sessions with any
-        number of sources, keeps the use of SDP Offer/Answer to the
-        initialization of transport and media chains and delegates
-        stream control to other, upper layer protocols.
-      </t>
-    </section>
-    <section title='Introduction' anchor="intro">
-      <t>
-        The goal of this document is to describe a way of using SDP
-        Offer/Answer in sessions with multiple media sources (SSRCs),
-        that limits the actual number of offers and answers exchanged on
-        the wire to a minimum required for transport and codec chain
-        initialization. The main point of the proposal is the fact that
-        any "m=" line contains enough information for setting up RTP
-        sessions with any number of SSRCs. Many applications may find
-        such negotiation entirely sufficient for their needs.
+        that simply uses "m=" lines in the way they were originally
+        designed with SDP: descriptors of RTP sessions with any
+        number of sources. Such an approach keeps the use of SDP
+        Offer/Answer to the initialization of transport and media chains
+        and delegates stream control to other, upper layer protocols.
       </t>
       <t>
-        Obviously many others need to support additional control.
-        Depending on the use case many would need to turn some  SSRCs
-        off, while keeping others active, match SSRCs to user
-        identities, mute some of them, change their direction,
-        orientation, visual effects, etc. The variety of use cases
-        suggests a variety of different needs and potentially different
-        solutions. While SDP Offer/Answer is likely to be the mechanism
-        of choice for many, it is just as likely that it will not be the
-        case for many more.
-      </t>
-      <t>
-        The model described in this specification is important for
-        applications with the following goals/constraints:
+        The model described in this specification is intended for
+        applications that require reliability, flexibility and
+        scalability. It therefore tries to satisfy the following
+        constraints
       </t>
       <t>
         <list style="symbols">
@@ -191,7 +183,9 @@
         standard SDP and Offer/Answer for negotiating formats,
         establishing transport channels and exchanging, in a declarative
         way, media and transport parameters that are then used for the
-        initialization of the corresponding stacks.
+        initialization of the corresponding stacks. It does not add new
+        concepts and simply requires applications to abide by the
+        original design of SDP and the "m=" line construct.
       </t>
       <t>
         The following is an example presenting what this specification
@@ -309,9 +303,14 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
 ]]>
           </artwork>
         </figure>
-        The most important aspects in the above exchange are:
+        As already noted, the Offer/Answer exchange above remains
+        essentially the same regardless of whether the following media
+        session is going to contain one or multiple RTP streams (SSRCs)
+        per medium in either direction.
       </t>
-
+      <t>
+        The exchange also has the following important characteristics:
+      </t>
       <t>
         <list style="symbols">
           <t>
@@ -362,6 +361,42 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
           assume that such support is unavailable.
         </t>
       </section>
+      <section title="Advantages" anchor="pros">
+        <t>
+          The advantages of using "m=" lines to represent multiple media
+          sources in the way they were originally intended by SDP can
+          be roughly summarized to the follwoing:
+        </t>
+        <t>
+          <list style="symbols">
+            <t>
+              It works. Existing implementations are already
+              successfully using the approach.
+            </t>
+            <t>
+              No Offer/Answer when adding/removing streams. Improves
+              flexibility for applications allowing them to only signal
+              information that they really need to.
+            </t>
+            <t>
+              No added glare risk. Improves scalability and reliability.
+            </t>
+            <t>
+              No need to pre-announce SSRCs. Improves scalability.
+            </t>
+            <t>
+              Allows apps to choose fine-tuned signalling: Custom,
+              XCON, RFC4575, WebRTC JavaScript, CLUE channels, or even
+              Plan A and Plan B.
+            </t>
+          </list>
+        </t>
+        <t>
+          Combined, the above set of characteristics allow for a
+          multi-stream management method that gives scalability,
+          flexibility and reliability.
+        </t>
+      </section>
     </section>
     <section title="Additional Session Control and Signalling"
              anchor="session-control">
@@ -396,12 +431,13 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
         cover this. This includes CLUE channels <xref target="CLUE"/>,
         the SIP Event Package For Conference State
         <xref target="RFC4575"/> and its XMPP variant
-        <xref target="COIN"/> as well as the protocols defined within
+        <xref target="COIN"/>, as well as the protocols defined within
         the Centralised Conferencing IETF working group
-        <xref target="XCON"/> . Additional mechanisms, undoubtedly many
-        based on JSON, are very likely to emerge in the future as WebRTC
-        applications address varying use cases, scenarios and
-        topologies.
+        <xref target="XCON"/>. Additional mechanisms are very likely to
+        emerge in the future as various applications address specific
+        use cases, scenarios and topologies. Examples for this could be
+        WebRTC JavaScript applications using proprietary JSON
+        descriptors, XMPP clients with new XML schemas and many others.
       </t>
       <t>
         The most important part of this specification is hence to
@@ -438,7 +474,7 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
         in many cases end up being received on the same port. A demuxing
         mechanism is therefore necessary in order for these packets to
         then be fed into the appropriate processing chain (i.e. matched
-        to an m= line).
+        to an "m=" line).
       </t>
       <t>
         <list>
@@ -466,21 +502,21 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
       </t>
       <t>
         This specification uses demuxing based on RTP payload types.
-        When creating offers and answers WebRTC applications MUST
-        therefore allocate RTP payload types only once per bundle group.
-        In cases where rtcp-mux is in use this would mean a maximum of
-        96 payload types per bundle <xref target="RFC5761"/>. It has
-        been pointed out that some legacy devices may have unpredictable
-        behaviour with payload types that are outside the 96-127 range
-        reserved by <xref target="RFC3551"/> for dynamic use. Some
-        applications or implementations may therefore choose not to use
-        values outside this range. Whatever the reason, offerers that
-        find they need more than the available payload type numbers,
-        will simply need to either use a second bundle group or not use
-        BUNDLE at all (which in the case of a single audio and a single
-        video m= line amounts to roughly the same thing). This would
-        also imply building a dynamic table, mapping SSRCs to PTs and
-        m= lines, in order to then also allow for RTCP demuxing.
+        When creating offers and answers applications MUST therefore
+        allocate RTP payload types only once per bundle group. In cases
+        where rtcp-mux is in use this would mean a maximum of 96 payload
+        types per bundle <xref target="RFC5761"/>. It has been pointed
+        out that some legacy devices may have unpredictable behaviour
+        with payload types that are outside the 96-127 range reserved by
+        <xref target="RFC3551"/> for dynamic use. Some applications or
+        implementations may therefore choose not to use values outside
+        this range. Whatever the reason, offerers that find they need
+        more than the available payload type numbers, will simply need
+        to either use a second bundle group or not use BUNDLE at all
+        (which in the case of a single audio and a single video "m="
+        line amounts to roughly the same thing). This would also imply
+        building a dynamic table, mapping SSRCs to PTs and m= lines, in
+        order to then also allow for RTCP demuxing.
       </t>
       <t>
         While not desirable, the implications of such a decision would
@@ -509,25 +545,24 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
     <section title="Simulcasting, FEC, Layering and RTX (Open Issue)"
              anchor="repair-flows">
       <t>
-        From a WebRTC perspective, repair flows such as layering, FEC,
-        RTX and to some extent simulcasting, present an interesting
-        challenge, which is why they are considered an open issue by
-        this specification.
+        Repair flows such as layering, FEC, RTX and to some extent
+        simulcasting, present an interesting challenge, which is why
+        they are considered an open issue by this specification.
       </t>
       <t>
         On the one hand they are transport utilities that need to be
-        understood, supported and used by browsers in a way that is
-        mostly transparent to applications. On the other, some
-        applications may need to be made aware of them and given the
-        option to control their use. This could be necessary in cases
-        where their use needs to be signalled to non-WebRTC endpoints
-        in an application specific way. Another example is the
-        possibility for an application to choose to disable some or all
-        repair flows because it has been made aware by
-        application-specific signalling that they are temporarily not
-        being used/rendered by the remote end (e.g. because it is only
-        displaying a thumbnail or because a corresponding video tag
-        is not currently visible).
+        understood, supported and used by the level of the media
+        libraries in a way that is mostly transparent to applications.
+        On the other, some applications may need to be made aware of
+        them and given the option to control their use. This could be
+        necessary in cases where their use needs to be signalled to
+        endpoints through application-specific non-SDP mechanisms.
+        Another example is the possibility for an application to choose
+        to disable some or all repair flows because it has been made
+        aware by application-specific signalling that they are
+        temporarily not being used/rendered by the remote end (e.g.
+        because it is only displaying a thumbnail or because a
+        corresponding video tag is not currently visible).
       </t>
       <t>
         One way of handling such flows would be to advertise them in the
@@ -566,7 +601,7 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
         delayed until the reception of the first RTCP packet.
       </t>
     </section>
-    <section title="Comparison with Plans A and B" anchor="plan-cons">
+    <section title="Problems with Plans A and B" anchor="plan-cons">
       <t>
         As already mentioned both Plans A and B heavily rely on SDP and
         Offer/Answer for advanced stream control. They both require
@@ -873,7 +908,8 @@ a=max-recv-ssrc:{*:4}                     // number of SSRCs
     </references>
     <section title='Acknowledgements'>
       <t>
-        pending
+        Many thanks to Jonathan Lennox for reviewing the document and
+        providing valuable feedback.
       </t>
     </section>
   </back>
